@@ -8,9 +8,13 @@
 """
 
 import math
+import sys
+
+import numpy as np
 from gurobipy import *
 from gurobipy import GRB
 from ReadData import read_data, solution_path
+from Results import Results
 
 
 def construct_scheduling_model(cus_list: list, sit_list: list, qos_dict: dict, qos_constraint: int):
@@ -151,7 +155,8 @@ def construct_scheduling_model(cus_list: list, sit_list: list, qos_dict: dict, q
 
     # 打印解，并将解决方案写入到文件中
     if m.status == GRB.OPTIMAL:
-        print('最优解: %g' % m.objVal)
+
+        # 打印解决方案
         for t in range(len(mtime_list)):
             for i in range(len(cus_list)):
                 for j in range(len(sit_list)):
@@ -161,6 +166,8 @@ def construct_scheduling_model(cus_list: list, sit_list: list, qos_dict: dict, q
                             cus_list[i].name,
                             sit_list[j].name,
                             x[cus_list[i].name, sit_list[j].name, mtime_list[t]].x))
+        print('\n\n最优解: %g' % m.objVal)
+
         # 将解决方案写入到文件中
         with open(solution_path, mode='w', encoding='utf-8') as f:
             for t in range(len(mtime_list)):
@@ -176,6 +183,21 @@ def construct_scheduling_model(cus_list: list, sit_list: list, qos_dict: dict, q
                                                                                      mtime_list[t]].x)) + '>,'
                     f.write(str_to_write[0:-1])
                     f.write('\n')
+            print("\n\n成功将解决方案写入到文件{}!".format(solution_path))
+
+        # 检查Gurobi求解的结果是否满足题目要求
+        results = Results(cus_list, sit_list, qos_dict, qos_constraint)
+        # results.solution = np.zeros((len(mtime_list), len(cus_list), len(sit_list)))
+        for t in range(len(mtime_list)):
+            for i in range(len(cus_list)):
+                for j in range(len(sit_list)):
+                    results.solution[t][i][j] = int(x[cus_list[i].name, sit_list[j].name, mtime_list[t]].x)
+        status = results.check_feasible()
+        if status is False:
+            sys.exit("探测到不可行解，系统退出！")
+        else:
+            print("检测通过，满足所有约束！")
+
     elif m.status == GRB.INFEASIBLE:
         print("模型无解！")
         m.computeIIS()

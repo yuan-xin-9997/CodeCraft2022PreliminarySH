@@ -42,6 +42,15 @@ class Site:
         self.band_width = band_width  # 节点带宽大小
 
 
+class Parameter:
+    """
+    算法参数类
+    """
+
+    def __init__(self):
+        self.alpha = 0.5  # 初始解生成算法中用来更新下一时刻边缘节点被选择的概率
+
+
 def read_data():
     """
     从data目录读取数据，并转换为内部可读取数据
@@ -70,6 +79,7 @@ def read_data():
                 cus_list[i].demand.append(int(demand[i + 1]))
     for cus in cus_list:
         cus.check_equality()
+    print("\n需求数据读取成功！")
 
     # 边缘节点数据
     with open(data_path + site_bandwidth_file_name, 'r') as f:
@@ -82,6 +92,7 @@ def read_data():
             sit_list.append(
                 Site(site_name, band_width)
             )
+    print("\n边缘节点数据读取成功！")
 
     # 网络时延数据
     qos_data = np.loadtxt(
@@ -98,11 +109,13 @@ def read_data():
             site_name = qos_results[1:][i][0]
             for j in range(len(cus_name)):
                 qos_dict[site_name, cus_name[j]] = int(qos_data[i][j])
+    print("\n网络时延数据读取成功！")
 
     # 读取QoS约束上限
     with open(data_path + config_file_name, mode='r', encoding="utf-8") as f:
         lines = f.readlines()
         qos_const = int(lines[1].replace('qos_constraint=', ''))
+    print("\nQoS约束上限数据读取成功！")
 
     return cus_list, sit_list, qos_dict, qos_const
 
